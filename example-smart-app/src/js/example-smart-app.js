@@ -1,7 +1,12 @@
 (function(window){
   window.extractData = function() {
     var ret = $.Deferred();
-    FHIR.oauth2.ready().then(onReady).catch(onError);
+
+    FHIR.oauth2.ready()
+      .then(console.log)
+      .then(client => { onReady(ret, client); } )
+      .catch(error => { onError(ret, error); } );
+
     return ret.promise();
   }
 
@@ -19,16 +24,16 @@
     };
   }
 
-  function onError(promise) {
-    console.log('Loading error', arguments);
-    promise.reject();
+  function onError(ret, error) {
+    console.log('Loading error', error);
+    ret.reject();
   }
 
-  function onReady(promise)  {
-    if (promise.hasOwnProperty('patient')) {
-      var patient = promise.patient;
+  function onReady(ret, client)  {
+    if (client.hasOwnProperty('patient')) {
+      var patient = client.patient;
       var pt = patient.read();
-      var obv = promise.patient.api.fetchAll({
+      var obv = client.patient.api.fetchAll({
                   type: 'Observation',
                   query: {
                     code: {
@@ -39,7 +44,7 @@
                   }
                 });
 
-      $.when(pt, obv).fail(onError);
+      $.when(pt, obv).fail(() => { onError(ret); });
 
       $.when(pt, obv).done(function(patient, obv) {
         var byCodes = promise.byCodes(obv, 'code');
@@ -77,10 +82,10 @@
         p.hdl = getQuantityValueAndUnit(hdl[0]);
         p.ldl = getQuantityValueAndUnit(ldl[0]);
 
-        promise.resolve(p);
+        ret.resolve(p);
       });
     } else {
-      onError();
+      onError(ret);
     }
   }
 
