@@ -30,22 +30,29 @@
   }
 
   function onReady(ret, client)  {
-    var pt = client.patient.read();
-    var obv = client.patient.api.fetchAll({
-                type: 'Observation',
-                query: {
-                  code: {
-                    $or: ['http://loinc.org|8302-2', 'http://loinc.org|8462-4',
-                          'http://loinc.org|8480-6', 'http://loinc.org|2085-9',
-                          'http://loinc.org|2089-1', 'http://loinc.org|55284-4']
-                  }
-                }
-              });
+    var pt = client.patient;
+    
+    var query = new URLSearchParams();
+    query.set("patient", client.patient.id);
+    query.set("_count", 5); // Try this to fetch fewer pages
+    query.set("code", [
+      'http://loinc.org|8302-2', // Body height
+      'http://loinc.org|8462-4',
+      'http://loinc.org|8480-6',
+      'http://loinc.org|2085-9',
+      'http://loinc.org|2089-1',
+      'http://loinc.org|55284-4'
+    ].join(","));
+    var obv = client.request("Observation?" + query, {
+      pageLimit: 0,   // get all pages
+      flat     : true // return flat array of Observation resources
+    });
+
 
     $.when(pt, obv).fail(() => { onError(ret); });
 
-    $.when(pt, obv).done(function(patient, obv) {
-      var byCodes = promise.byCodes(obv, 'code');
+    $.when(pt, obv).done(function(client, patient, observation) {
+      var byCodes = client.byCodes(observation, 'code');
       var gender = patient.gender;
 
       var fname = '';
