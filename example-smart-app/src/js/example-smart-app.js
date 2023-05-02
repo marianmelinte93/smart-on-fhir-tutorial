@@ -4,7 +4,7 @@
     FHIR.oauth2.ready().then(onReady).catch(onError);
     return ret.promise();
   }
-  
+
   function defaultPatient(){
     return {
       fname: {value: ''},
@@ -19,16 +19,16 @@
     };
   }
 
-  function onError() {
+  function onError(promise) {
     console.log('Loading error', arguments);
-    ret.reject();
+    promise.reject();
   }
 
-  function onReady(smart)  {
-    if (smart.hasOwnProperty('patient')) {
-      var patient = smart.patient;
+  function onReady(promise)  {
+    if (promise.hasOwnProperty('patient')) {
+      var patient = promise.patient;
       var pt = patient.read();
-      var obv = smart.patient.api.fetchAll({
+      var obv = promise.patient.api.fetchAll({
                   type: 'Observation',
                   query: {
                     code: {
@@ -42,7 +42,7 @@
       $.when(pt, obv).fail(onError);
 
       $.when(pt, obv).done(function(patient, obv) {
-        var byCodes = smart.byCodes(obv, 'code');
+        var byCodes = promise.byCodes(obv, 'code');
         var gender = patient.gender;
 
         var fname = '';
@@ -77,7 +77,7 @@
         p.hdl = getQuantityValueAndUnit(hdl[0]);
         p.ldl = getQuantityValueAndUnit(ldl[0]);
 
-        ret.resolve(p);
+        promise.resolve(p);
       });
     } else {
       onError();
