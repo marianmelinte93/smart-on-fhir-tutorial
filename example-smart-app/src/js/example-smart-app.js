@@ -53,11 +53,10 @@ async function obtainData(client)  {
   patient.hdl = getQuantityValueAndUnit(hdl[0]);
   let ldl = observationByCodes('2089-1');
   patient.ldl = getQuantityValueAndUnit(ldl[0]);
+  return patient;
 }
 
 function displayData(patient) {
-  $('#holder').show();
-  $('#loading').hide();
   $('#fname').html(patient.firstName);
   $('#lname').html(patient.lastName);
   $('#gender').html(patient.gender);
@@ -67,6 +66,8 @@ function displayData(patient) {
   $('#diastolicbp').html(patient.diastolicbp);
   $('#ldl').html(patient.ldl);
   $('#hdl').html(patient.hdl);
+  $('#loading').hide();
+  $('#holder').show();
 };
 
 function displayError(error) {
