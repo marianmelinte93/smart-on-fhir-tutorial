@@ -1,143 +1,107 @@
-(function(window){
-  window.extractData = function() {
-    var ret = $.Deferred();
+async function obtainData(client)  {
+  // prepare patient query
+  let patientPromise = client.patient.read();
+  
+  // prepare observation query
+  let query = new URLSearchParams();
+  query.set("patient", client.patient.id);
+  query.set("_count", 5); // fetch fewer pages
+  query.set("code", [
+    'http://loinc.org|8302-2', // body height
+    'http://loinc.org|8462-4', // diastolic blood pressure
+    'http://loinc.org|8480-6', // systolic blood pressure
+    'http://loinc.org|2085-9', // cholesterol in hdl (high-density lipoprotein)
+    'http://loinc.org|2089-1', // cholesterol in ldl (low-density lipoprotein)
+    'http://loinc.org|55284-4' // blood pressure
+  ].join(","));
+  let observationPromise = client.request("Observation?" + query, {
+    pageLimit: 0,   // get all pages
+    flat     : true // return flat array of Observation resources
+  });
 
-    FHIR.oauth2.ready()
-      .then(client => { onReady(client, ret); } )
-      .catch(error => { onError(error, ret); } );
+  console.log("Waiting for promise to be fulfilled..");
 
-    return ret.promise();
+  // obtain data
+  const [patientData, observationData] = await Promise.all([patientPromise, observationPromise]);
+
+  let observationByCodes = client.byCodes(observationData, 'code');
+
+  let patient = {};
+  // name
+  if (typeof patientData.name[0] !== 'undefined') {
+    patient.firstName = patientData.name[0].given.join(' ');
+    patient.lastName = patientData.name[0].family.join(' ');
   }
-
-  function onReady(client, ret)  {
-    console.log("client", client);
-    console.log("ret", ret);
-    var pt = client.patient;
-    
-    var query = new URLSearchParams();
-    query.set("patient", client.patient.id);
-    query.set("_count", 5); // Try this to fetch fewer pages
-    query.set("code", [
-      'http://loinc.org|8302-2', // Body height
-      'http://loinc.org|8462-4',
-      'http://loinc.org|8480-6',
-      'http://loinc.org|2085-9',
-      'http://loinc.org|2089-1',
-      'http://loinc.org|55284-4'
-    ].join(","));
-    var obv = client.request("Observation?" + query, {
-      pageLimit: 0,   // get all pages
-      flat     : true // return flat array of Observation resources
-    });
-
-    console.log("pt", pt);
-    console.log("obv", obv);
-
-    // $.when(pt, obv).fail(() => { onError(ret); });
-
-    $.when(pt, obv).done((pt, obv, ret) => function(patient, observation, ret) {
-      console.log("patient", patient);
-      console.log("observation", observation);
-      console.log("ret", ret);
-
-      var byCodes = patient.byCodes(observation, 'code');
-      var gender = patient.gender;
-
-      var fname = '';
-      var lname = '';
-
-      if (typeof patient.name[0] !== 'undefined') {
-        fname = patient.name[0].given.join(' ');
-        lname = patient.name[0].family.join(' ');
-      }
-
-      var height = byCodes('8302-2');
-      var systolicbp = getBloodPressureValue(byCodes('55284-4'),'8480-6');
-      var diastolicbp = getBloodPressureValue(byCodes('55284-4'),'8462-4');
-      var hdl = byCodes('2085-9');
-      var ldl = byCodes('2089-1');
-
-      var p = defaultPatient();
-      p.birthdate = patient.birthDate;
-      p.gender = gender;
-      p.fname = fname;
-      p.lname = lname;
-      p.height = getQuantityValueAndUnit(height[0]);
-
-      if (typeof systolicbp != 'undefined')  {
-        p.systolicbp = systolicbp;
-      }
-
-      if (typeof diastolicbp != 'undefined') {
-        p.diastolicbp = diastolicbp;
-      }
-
-      p.hdl = getQuantityValueAndUnit(hdl[0]);
-      p.ldl = getQuantityValueAndUnit(ldl[0]);
-
-      ret.resolve(p);
-    });
+  // gender
+  patient.gender = patientData.gender;
+  // birthdate
+  patient.birthdate = patientData.birthDate;
+  // height
+  let height = observationByCodes('8302-2');
+  patient.height = getQuantityValueAndUnit(height[0]);
+  // blood pressure
+  let systolicbp = getBloodPressureValue(observationByCodes('55284-4'),'8480-6');
+  if (typeof systolicbp !== 'undefined')  {
+    patient.systolicbp = systolicbp;
   }
-
-  function onError(error, ret) {
-    console.log('Loading error:', error);
-    ret.reject();
+  let diastolicbp = getBloodPressureValue(observationByCodes('55284-4'),'8462-4');
+  if (typeof diastolicbp !== 'undefined') {
+    patient.diastolicbp = diastolicbp;
   }
+  // cholesterol
+  let hdl = observationByCodes('2085-9');
+  patient.hdl = getQuantityValueAndUnit(hdl[0]);
+  let ldl = observationByCodes('2089-1');
+  patient.ldl = getQuantityValueAndUnit(ldl[0]);
+}
 
-  function defaultPatient(){
-    return {
-      fname: {value: ''},
-      lname: {value: ''},
-      gender: {value: ''},
-      birthdate: {value: ''},
-      height: {value: ''},
-      systolicbp: {value: ''},
-      diastolicbp: {value: ''},
-      ldl: {value: ''},
-      hdl: {value: ''},
-    };
-  }
+function displayData(patient) {
+  $('#holder').show();
+  $('#loading').hide();
+  $('#fname').html(patient.firstName);
+  $('#lname').html(patient.lastName);
+  $('#gender').html(patient.gender);
+  $('#birthdate').html(patient.birthdate);
+  $('#height').html(patient.height);
+  $('#systolicbp').html(patient.systolicbp);
+  $('#diastolicbp').html(patient.diastolicbp);
+  $('#ldl').html(patient.ldl);
+  $('#hdl').html(patient.hdl);
+};
 
-  function getBloodPressureValue(BPObservations, typeOfPressure) {
-    var formattedBPObservations = [];
-    BPObservations.forEach(function(observation){
-      var BP = observation.component.find(function(component){
-        return component.code.coding.find(function(coding) {
-          return coding.code == typeOfPressure;
-        });
+function displayError(error) {
+  console.log('Loading error:', error);
+
+  $('#loading').hide();
+  $('#errors').html('<p> Failed to call FHIR Service </p>');
+}
+
+////////////////
+
+function getBloodPressureValue(BPObservations, typeOfPressure) {
+  let formattedBPObservations = [];
+  BPObservations.forEach(function(observation){
+    let BP = observation.component.find(function(component){
+      return component.code.coding.find(function(coding) {
+        return coding.code == typeOfPressure;
       });
-      if (BP) {
-        observation.valueQuantity = BP.valueQuantity;
-        formattedBPObservations.push(observation);
-      }
     });
-
-    return getQuantityValueAndUnit(formattedBPObservations[0]);
-  }
-
-  function getQuantityValueAndUnit(ob) {
-    if (typeof ob != 'undefined' &&
-        typeof ob.valueQuantity != 'undefined' &&
-        typeof ob.valueQuantity.value != 'undefined' &&
-        typeof ob.valueQuantity.unit != 'undefined') {
-          return ob.valueQuantity.value + ' ' + ob.valueQuantity.unit;
-    } else {
-      return undefined;
+    if (BP) {
+      observation.valueQuantity = BP.valueQuantity;
+      formattedBPObservations.push(observation);
     }
+  });
+
+  return getQuantityValueAndUnit(formattedBPObservations[0]);
+}
+
+function getQuantityValueAndUnit(ob) {
+  if (typeof ob != 'undefined' &&
+      typeof ob.valueQuantity != 'undefined' &&
+      typeof ob.valueQuantity.value != 'undefined' &&
+      typeof ob.valueQuantity.unit != 'undefined') {
+        return ob.valueQuantity.value + ' ' + ob.valueQuantity.unit;
+  } else {
+    return undefined;
   }
-
-  window.drawVisualization = function(p) {
-    $('#holder').show();
-    $('#loading').hide();
-    $('#fname').html(p.fname);
-    $('#lname').html(p.lname);
-    $('#gender').html(p.gender);
-    $('#birthdate').html(p.birthdate);
-    $('#height').html(p.height);
-    $('#systolicbp').html(p.systolicbp);
-    $('#diastolicbp').html(p.diastolicbp);
-    $('#ldl').html(p.ldl);
-    $('#hdl').html(p.hdl);
-  };
-
-})(window);
+}
