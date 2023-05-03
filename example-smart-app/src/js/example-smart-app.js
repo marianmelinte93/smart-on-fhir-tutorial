@@ -3,33 +3,15 @@
     var ret = $.Deferred();
 
     FHIR.oauth2.ready()
-      .then(console.log)
-      .then(client => { onReady(ret, client); } )
-      .catch(error => { onError(ret, error); } );
+      .then(client => { onReady(client, ret); } )
+      .catch(error => { onError(error, ret); } );
 
     return ret.promise();
   }
 
-  function defaultPatient(){
-    return {
-      fname: {value: ''},
-      lname: {value: ''},
-      gender: {value: ''},
-      birthdate: {value: ''},
-      height: {value: ''},
-      systolicbp: {value: ''},
-      diastolicbp: {value: ''},
-      ldl: {value: ''},
-      hdl: {value: ''},
-    };
-  }
-
-  function onError(ret, error) {
-    console.log('Loading error', error);
-    ret.reject();
-  }
-
-  function onReady(ret, client)  {
+  function onReady(client, ret)  {
+    console.log("client", client);
+    console.log("ret", ret);
     var pt = client.patient;
     
     var query = new URLSearchParams();
@@ -48,11 +30,17 @@
       flat     : true // return flat array of Observation resources
     });
 
+    console.log("pt", pt);
+    console.log("obv", obv);
 
-    $.when(pt, obv).fail(() => { onError(ret); });
+    // $.when(pt, obv).fail(() => { onError(ret); });
 
-    $.when(pt, obv).done(function(client, patient, observation) {
-      var byCodes = client.byCodes(observation, 'code');
+    $.when(pt, obv).done((pt, obv, ret) => function(patient, observation, ret) {
+      console.log("patient", patient);
+      console.log("observation", observation);
+      console.log("ret", ret);
+
+      var byCodes = patient.byCodes(observation, 'code');
       var gender = patient.gender;
 
       var fname = '';
@@ -89,6 +77,25 @@
 
       ret.resolve(p);
     });
+  }
+
+  function onError(error, ret) {
+    console.log('Loading error:', error);
+    ret.reject();
+  }
+
+  function defaultPatient(){
+    return {
+      fname: {value: ''},
+      lname: {value: ''},
+      gender: {value: ''},
+      birthdate: {value: ''},
+      height: {value: ''},
+      systolicbp: {value: ''},
+      diastolicbp: {value: ''},
+      ldl: {value: ''},
+      hdl: {value: ''},
+    };
   }
 
   function getBloodPressureValue(BPObservations, typeOfPressure) {
