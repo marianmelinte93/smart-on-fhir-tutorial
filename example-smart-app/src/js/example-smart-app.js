@@ -10,7 +10,7 @@ async function obtainData(client)  {
     'http://loinc.org|8302-2', // body height
     'http://loinc.org|8462-4', // diastolic blood pressure
     'http://loinc.org|8480-6', // systolic blood pressure
-    'http://loinc.org|2085-9', // cholesterol in hdl (high-density lipoprotein)
+    //'http://loinc.org|2085-9', // cholesterol in hdl (high-density lipoprotein)
     'http://loinc.org|2089-1', // cholesterol in ldl (low-density lipoprotein)
     'http://loinc.org|55284-4' // blood pressure
   ].join(","));
@@ -49,8 +49,8 @@ async function obtainData(client)  {
     patient.diastolicbp = diastolicbp;
   }
   // cholesterol
-  let hdl = observationByCodes('2085-9');
-  patient.hdl = getQuantityValueAndUnit(hdl[0]);
+  // let hdl = observationByCodes('2085-9');
+  // patient.hdl = getQuantityValueAndUnit(hdl[0]);
   let ldl = observationByCodes('2089-1');
   patient.ldl = getQuantityValueAndUnit(ldl[0]);
 
