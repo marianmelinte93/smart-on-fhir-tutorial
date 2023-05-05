@@ -19,10 +19,10 @@ async function obtainData(client)  {
     flat     : true // return flat array of Observation resources
   });
 
-  console.log("Waiting for promise to be fulfilled..");
-
   // obtain data
+  console.log("Waiting for promise to be fulfilled..");
   const [patientData, observationData] = await Promise.all([patientPromise, observationPromise]);
+  console.log("Promise fulfilled.");
 
   let observationByCodes = client.byCodes(observationData, 'code');
 
