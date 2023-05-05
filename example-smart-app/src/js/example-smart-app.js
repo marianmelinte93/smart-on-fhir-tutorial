@@ -30,7 +30,7 @@ async function obtainData(client)  {
   // name
   if (typeof patientData.name[0] !== 'undefined') {
     patient.firstName = patientData.name[0].given.join(' ');
-    patient.lastName = patientData.name[0].family.join(' ');
+    patient.lastName = patientData.name[0].family;
   }
   // gender
   patient.gender = patientData.gender;
