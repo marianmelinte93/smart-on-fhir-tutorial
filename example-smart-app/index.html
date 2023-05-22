@@ -4,10 +4,42 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta content="APPLINK" name="discern">
-    <title>Example-SMART-App mm044088</title>
 
-    <link rel='stylesheet' type='text/css' href='./src/css/example-smart-app.css'>
-    <link rel='stylesheet' type='text/css' href='./lib/css/cerner-smart-embeddable-lib-1.4.0.min.css'>
+    <title>SMART-App mm044088</title>
+
+    <link rel='stylesheet' type='text/css' href='https://marianmelinte.com/smart/example-smart-app/src/css/example-smart-app.css'>
+    <link rel='stylesheet' type='text/css' href='https://marianmelinte.com/smart/example-smart-app/lib/css/cerner-smart-embeddable-lib-1.4.0.min.css'>
+    
+    <!-- Required JS files to enable this page to embed within an MPage -->
+    <script src='https://marianmelinte.com/smart/example-smart-app/lib/js/vendor/babel-polyfill-7.12.1.min.js'></script>
+
+    <!-- Embeddable lib -->
+    <!-- <script src='https://marianmelinte.com/smart/example-smart-app/lib/js/cerner-smart-embeddable-lib-1.4.0.min.js'></script> -->
+    <!-- <script src='https://marianmelinte.com/smart/example-smart-app/lib/js/cerner-smart-embeddable-lib-1.0.0.min.js'></script> -->
+    <script src='https://marianmelinte.com/smart/example-smart-app/lib/js/embedded_content.min.js'></script>
+
+    <!-- Application-level javascript-->
+    <script src='https://marianmelinte.com/smart/example-smart-app/src/js/example-smart-app.js'></script>
+
+    <!-- FHIR Client JS Library -->
+    <script src='https://marianmelinte.com/smart/example-smart-app/lib/js/fhir-client-v2.5.2.min.js'></script>
+
+    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
+    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
+    <!-- <script src='https://marianmelinte.com/smart/example-smart-app/lib/js/fhir-client-cerner-additions-1.0.0.js'></script> -->
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> -->
+    <script src="https://marianmelinte.com/smart/example-smart-app/lib/js/vendor/jquery-3.7.0.min.js"></script>
+
+    <script>
+      window.onload = (event) => {
+        // Obtain and Display data
+        console.log("MM044088 ===== Obtaining data..");
+        FHIR.oauth2.ready()
+          .then(obtainData)
+          .then(displayData)
+          .catch(displayError);
+        };
+    </script>
   </head>
   <body>
     <div id='errors'>
@@ -75,26 +107,5 @@
         </tr>
       </table>
     </div>
-    <!-- Required JS files to enable this page to embed within an MPage -->
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.12.1/polyfill.min.js'></script>
-    <script src='./lib/js/cerner-smart-embeddable-lib-1.4.0.min.js'></script>
-
-    <!-- Application-level javascript-->
-    <script src='./src/js/example-smart-app.js'></script>
-
-    <!-- FHIR Client JS Library -->
-    <script src='./lib/js/fhir-client-v2.5.2.min.js'></script>
-
-    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
-    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
-    <script src='./lib/js/fhir-client-cerner-additions-1.0.0.js'></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script>
-      // Obtain and Display data
-      FHIR.oauth2.ready()
-        .then(obtainData)
-        .then(displayData)
-        .catch(displayError);
-    </script>
   </body>
 </html>
